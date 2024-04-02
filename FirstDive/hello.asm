@@ -1,34 +1,24 @@
-default rel
+default rel         ; Use RIP-relative addressing like [rel msg] by default
+global WinMain
+extern ExitProcess  ; external functions in system libraries 
+extern MessageBoxA
 
-extern GetStdHandle
-extern WriteFile
-extern ExitProcess
+section .data 
+title:  db 'I fucking did It!!', 0
+msg:    db 'Hello world!', 0
 
 section .text
-global main
-main:
-    sub     rsp, 40          ; reserve shadow space and align stack by 16
+WinMain:
+    sub rsp, 28h      ; reserve shadow space and make RSP%16 == 0
+    mov rcx, 0       ; hWnd = HWND_DESKTOP
+    lea rdx,[msg]    ; LPCSTR lpText
+    lea r8,[title]   ; LPCSTR lpCaption
+    mov r9d, 0       ; uType = MB_OK
+    call MessageBoxA
 
-    mov     rcx, -11         
-    call    GetStdHandle
-
-    mov     rcx, rax         ; HANDLE is a 64-byte type on x64
-    lea     rdx, [msg]       ; lpBuffer = RIP-relative LEA (default rel)
-    mov     r8d, msg.len     ; DWORD nNumberOfBytesToWrite = 32-bit immediate constant length
-    lea     r9, [rsp+48]     ; lpNumberOfBytesWritten pointing into main's shadow space
-    mov     qword [rsp + 32], 0   ; lpOverlapped = NULL; This is a pointer, needs to be qword.
-    call    WriteFile        ; WriteFile(handle, msg, len, &our_shadow_space, NULL)
-
-;;; BOOL return value in EAX (BOOL is a 4-byte type, unlike bool).
-;;; NumberOfBytesWritten in dword [rsp+48]
-
-    xor     ecx, ecx
+    mov  ecx,eax        ; exit status = return value of MessageBoxA
     call ExitProcess
-  ; add     rsp, 40      ; alternative to calling a noreturn function like ExitProcess
-  ; ret
 
+    add rsp, 28h       ; if you were going to ret, restore RSP
 
-section .data         ; or section .rdata to put it in a read-only page
-    msg:  db "Hello, World!", 13, 10    ; including a CR LF newline is a good idea for a line of output text
-    .len equ  $-msg    ; let the assembler calculate the string length
-                       ; .len is a local label that appends to the most recent non-dot label, so this is msg.len
+    hlt     ; privileged instruction that crashes if ever reached.

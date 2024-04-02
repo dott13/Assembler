@@ -1,0 +1,9 @@
+msbuild/
+linuxbuild/
+
+*.el
+GRTAGS
+GTAGS
+GPATH
+.clang_complete
+.exe
