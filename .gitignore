@@ -6,4 +6,4 @@ GRTAGS
 GTAGS
 GPATH
 .clang_complete
-.exe
+*.exe
